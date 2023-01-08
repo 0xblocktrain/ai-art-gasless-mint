@@ -7,7 +7,13 @@ function App() {
 	const [prompt, setPrompt] = useState("");
 	const [imageBlob, setImageBlob] = useState(null);
 	const [file, setFile] = useState(null);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState(null);
 
+  const [name, setName] = useState("");
+  const [description, setDescription] = useState("");
+  const [address, setAddress] = useState("");
+  const [minted, setMinted] = useState(false);
 	console.log(prompt);
 
   const cleanupIPFS = (url) => {
@@ -17,6 +23,7 @@ function App() {
   }
 
 	const generateArt = async () => {
+    setLoading(true)
 		try {
 			const response = await axios.post(
 				`https://api-inference.huggingface.co/models/runwayml/stable-diffusion-v1-5`,
@@ -42,7 +49,10 @@ function App() {
 			setImageBlob(url);
 		} catch (err) {
 			console.log(err);
-		}
+      setError(true)
+		} finally {
+      setLoading(false)
+    }
 	};
 
   const uploadArtToIpfs = async () => {
@@ -76,9 +86,9 @@ function App() {
 				{
 					file_url: imageURL,
 					chain: "polygon",
-					name: "Sample NFT",
-					description: "Build with NFTPort!",
-					mint_to_address: "0x40808d4730aeAAfb44465c507499CB8EE690497b",
+					name: name?.length > 0 ? name : "AI NFT",
+					description: description?.length > 0 ? description : "AI generated NFT",
+					mint_to_address: address?.length > 0 ? address : "0x831d2b639238973BC16F8Be80911204Ca9e13B58",
 				},
         {
           headers: {
@@ -87,11 +97,16 @@ function App() {
         }
 			);
 			const data = await response.data;
+      setMinted(true)
 			console.log(data);
 		} catch (err) {
 			console.log(err);
 		}
 	};
+
+  console.log(name)
+  console.log(description)
+  console.log(address)
 
 	return (
 		<div className="flex flex-col items-center justify-center min-h-screen gap-4">
@@ -111,16 +126,45 @@ function App() {
 					>
 						Next
 					</button>
+          {loading && <p>Loading...</p>}
 				</div>
 				{imageBlob && (
 					<div className="flex flex-col gap-4 items-center justify-center">
 						<img src={imageBlob} alt="AI generated art" />
-						<button
-							onClick={mintNft}
-							className="bg-black text-white rounded-md p-2"
-						>
-							Mint NFT
-						</button>
+						{
+              minted ? <p>Minted this NFT</p> : (
+                <div className="flex flex-col items-center justify-center gap-4">
+        {/* input for name */}
+        <input
+          className="border-2 border-black rounded-md p-2"
+          onChange={(e) => setName(e.target.value)}
+          type="text"
+          placeholder="Enter a name"
+        />
+        {/* input for description */}
+        <input
+          className="border-2 border-black rounded-md p-2"
+          onChange={(e) => setDescription(e.target.value)}
+          type="text"
+          placeholder="Enter a description"
+        />
+        {/* input for address */}
+        <input
+          className="border-2 border-black rounded-md p-2"
+          onChange={(e) => setAddress(e.target.value)}
+          type="text"
+          placeholder="Enter a address"
+        />
+        {/* button to mint */}
+        <button
+          onClick={mintNft}
+          className="bg-black text-white rounded-md p-2"
+        >
+          Mint
+        </button>
+      </div>
+              )
+            }
 					</div>
 				)}
 			</div>
